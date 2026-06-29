@@ -1,0 +1,60 @@
+from pathlib import Path
+from models import ExecuteResponse
+from execute_utils import run, parse_metadata, SandboxInternalError
+
+TIME_LIMIT = 5.0
+MEMORY_LIMIT = 256
+
+ISOLATE_DIRS = [
+    "--dir=/usr",
+    "--dir=/bin",
+    "--dir=/lib",
+    "--dir=/lib64:maybe",
+    "--dir=/etc",
+    "--dir=/dev:maybe",
+]
+
+
+async def execute(
+    box_id: int, box_dir: Path, meta_path: str, code: str, stdin: str
+) -> ExecuteResponse:
+    (box_dir / "solution.js").write_text(code)
+
+    _, stdout, stderr = await run(
+        "isolate",
+        f"--box-id={box_id}",
+        *ISOLATE_DIRS,
+        # "--cg",
+        f"--time={TIME_LIMIT}",
+        f"--wall-time={TIME_LIMIT * 2:.1f}",
+        # f"--cg-mem={MEMORY_LIMIT * 1024}",
+        "--processes=128",
+        f"--meta={meta_path}",
+        "--run",
+        "--",
+        "/usr/bin/node",
+        "/box/solution.js",
+        stdin_data=stdin,
+    )
+
+    meta = parse_metadata(meta_path)
+    isolate_status = meta.get("status", "")
+
+    if isolate_status == "TO":
+        status = "TLE"
+    elif meta.get("cg-oom-killed") == "1":
+        status = "MLE"
+    elif isolate_status in ("RE", "SG"):
+        status = "RE"
+    elif isolate_status == "XX":
+        raise SandboxInternalError("Sandbox internal error")
+    else:
+        status = "OK"
+
+    return ExecuteResponse(
+        status=status,
+        stdout=stdout,
+        stderr=stderr,
+        time=float(meta["time"]) if "time" in meta else None,
+        memory=int(meta["cg-mem"]) if "cg-mem" in meta else None,
+    )
