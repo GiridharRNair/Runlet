@@ -15,22 +15,25 @@ async def execute(
     (box_dir / "solution.py").write_text(code)
     (box_dir / "stdin.txt").write_text(stdin)
 
-    _, stdout, stderr = await run(
-        "isolate",
-        f"--box-id={box_id}",
-        *ISOLATE_DIRS,
-        # "--cg",
-        f"--time={settings.TIME_LIMIT}",
-        f"--wall-time={settings.TIME_LIMIT * 2:.1f}",
-        # f"--cg-mem={MEMORY_LIMIT * 1024}",
-        "--processes=128",
-        f"--meta={meta_path}",
-        "--stdin=/box/stdin.txt",
-        "--run",
-        "--",
-        "/usr/bin/python3",
-        "/box/solution.py",
-    )
+    try:
+        _, stdout, stderr = await run(
+            "isolate",
+            f"--box-id={box_id}",
+            *ISOLATE_DIRS,
+            # "--cg",
+            f"--time={settings.TIME_LIMIT}",
+            f"--wall-time={settings.TIME_LIMIT * 2:.1f}",
+            # f"--cg-mem={MEMORY_LIMIT * 1024}",
+            "--processes=128",
+            f"--meta={meta_path}",
+            "--stdin=/box/stdin.txt",
+            "--run",
+            "--",
+            "/usr/bin/python3",
+            "/box/solution.py",
+        )
+    except OSError as e:
+        raise OSError(f"Python execute phase: {e}") from e
 
     meta = parse_metadata(meta_path)
     isolate_status = meta.get("status", "")

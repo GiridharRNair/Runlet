@@ -15,20 +15,23 @@ async def execute(
 ) -> ExecuteResponse:
     (box_dir / "Main.java").write_text(code)
 
-    rc, _, stderr = await run(
-        "isolate",
-        f"--box-id={box_id}",
-        *ISOLATE_DIRS,
-        # "--cg",
-        f"--time={settings.COMPILE_TIME_LIMIT}",
-        f"--wall-time={settings.COMPILE_TIME_LIMIT * 2:.1f}",
-        # f"--cg-mem={COMPILE_MEMORY_LIMIT * 1024}",
-        "--processes=128",
-        "--run",
-        "--",
-        "/usr/bin/javac",
-        "/box/Main.java",
-    )
+    try:
+        rc, _, stderr = await run(
+            "isolate",
+            f"--box-id={box_id}",
+            *ISOLATE_DIRS,
+            # "--cg",
+            f"--time={settings.COMPILE_TIME_LIMIT}",
+            f"--wall-time={settings.COMPILE_TIME_LIMIT * 2:.1f}",
+            # f"--cg-mem={COMPILE_MEMORY_LIMIT * 1024}",
+            "--processes=128",
+            "--run",
+            "--",
+            "/usr/bin/javac",
+            "/box/Main.java",
+        )
+    except OSError as e:
+        raise OSError(f"Java compile phase: {e}") from e
 
     if rc != 0:
         return ExecuteResponse(status="CE", stdout="", stderr=stderr)
@@ -37,24 +40,27 @@ async def execute(
         os.chmod(cls_file, 0o644)
     (box_dir / "stdin.txt").write_text(stdin)
 
-    _, stdout, stderr = await run(
-        "isolate",
-        f"--box-id={box_id}",
-        *ISOLATE_DIRS,
-        # "--cg",
-        f"--time={settings.TIME_LIMIT}",
-        f"--wall-time={settings.TIME_LIMIT * 2:.1f}",
-        # f"--cg-mem={MEMORY_LIMIT * 1024}",
-        "--processes=128",
-        f"--meta={meta_path}",
-        "--stdin=/box/stdin.txt",
-        "--run",
-        "--",
-        "/usr/bin/java",
-        "-cp",
-        "/box",
-        "Main",
-    )
+    try:
+        _, stdout, stderr = await run(
+            "isolate",
+            f"--box-id={box_id}",
+            *ISOLATE_DIRS,
+            # "--cg",
+            f"--time={settings.TIME_LIMIT}",
+            f"--wall-time={settings.TIME_LIMIT * 2:.1f}",
+            # f"--cg-mem={MEMORY_LIMIT * 1024}",
+            "--processes=128",
+            f"--meta={meta_path}",
+            "--stdin=/box/stdin.txt",
+            "--run",
+            "--",
+            "/usr/bin/java",
+            "-cp",
+            "/box",
+            "Main",
+        )
+    except OSError as e:
+        raise OSError(f"Java execute phase: {e}") from e
 
     meta = parse_metadata(meta_path)
     isolate_status = meta.get("status", "")

@@ -15,24 +15,27 @@ async def execute(
 ) -> ExecuteResponse:
     (box_dir / "solution.cpp").write_text(code)
 
-    rc, _, stderr = await run(
-        "isolate",
-        f"--box-id={box_id}",
-        *ISOLATE_DIRS,
-        # "--cg",
-        f"--time={settings.COMPILE_TIME_LIMIT}",
-        f"--wall-time={settings.COMPILE_TIME_LIMIT * 2:.1f}",
-        # f"--cg-mem={COMPILE_MEMORY_LIMIT * 1024}",
-        "--processes=128",
-        "--env=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-        "--run",
-        "--",
-        "/usr/bin/g++",
-        "-O2",
-        "-o",
-        "/box/solution",
-        "/box/solution.cpp",
-    )
+    try:
+        rc, _, stderr = await run(
+            "isolate",
+            f"--box-id={box_id}",
+            *ISOLATE_DIRS,
+            # "--cg",
+            f"--time={settings.COMPILE_TIME_LIMIT}",
+            f"--wall-time={settings.COMPILE_TIME_LIMIT * 2:.1f}",
+            # f"--cg-mem={COMPILE_MEMORY_LIMIT * 1024}",
+            "--processes=128",
+            "--env=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+            "--run",
+            "--",
+            "/usr/bin/g++",
+            "-O2",
+            "-o",
+            "/box/solution",
+            "/box/solution.cpp",
+        )
+    except OSError as e:
+        raise OSError(f"C++ compile phase: {e}") from e
 
     if rc != 0:
         return ExecuteResponse(status="CE", stdout="", stderr=stderr)
@@ -40,21 +43,24 @@ async def execute(
     os.chmod(box_dir / "solution", 0o755)
     (box_dir / "stdin.txt").write_text(stdin)
 
-    _, stdout, stderr = await run(
-        "isolate",
-        f"--box-id={box_id}",
-        *ISOLATE_DIRS,
-        # "--cg",
-        f"--time={settings.TIME_LIMIT}",
-        f"--wall-time={settings.TIME_LIMIT * 2:.1f}",
-        # f"--cg-mem={MEMORY_LIMIT * 1024}",
-        "--processes=128",
-        f"--meta={meta_path}",
-        "--stdin=/box/stdin.txt",
-        "--run",
-        "--",
-        "/box/solution",
-    )
+    try:
+        _, stdout, stderr = await run(
+            "isolate",
+            f"--box-id={box_id}",
+            *ISOLATE_DIRS,
+            # "--cg",
+            f"--time={settings.TIME_LIMIT}",
+            f"--wall-time={settings.TIME_LIMIT * 2:.1f}",
+            # f"--cg-mem={MEMORY_LIMIT * 1024}",
+            "--processes=128",
+            f"--meta={meta_path}",
+            "--stdin=/box/stdin.txt",
+            "--run",
+            "--",
+            "/box/solution",
+        )
+    except OSError as e:
+        raise OSError(f"C++ execute phase: {e}") from e
 
     meta = parse_metadata(meta_path)
     isolate_status = meta.get("status", "")

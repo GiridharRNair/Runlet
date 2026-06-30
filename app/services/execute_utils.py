@@ -16,13 +16,16 @@ class SandboxInternalError(Exception):
 
 
 async def run(*args: str, stdin_data: str = "") -> tuple[int | None, str, str]:
-    proc = await asyncio.create_subprocess_exec(
-        *args,
-        stdin=asyncio.subprocess.PIPE,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    stdout, stderr = await proc.communicate(input=stdin_data.encode())
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *args,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await proc.communicate(input=stdin_data.encode())
+    except OSError as e:
+        raise OSError(f"Failed to spawn '{args[0]}': {e}") from e
     return (
         proc.returncode,
         stdout.decode(errors="replace"),
