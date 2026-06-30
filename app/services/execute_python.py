@@ -6,9 +6,7 @@ from services.execute_utils import (
     SandboxInternalError,
     ISOLATE_DIRS,
 )
-
-TIME_LIMIT = 5.0
-MEMORY_LIMIT = 256
+from config import settings
 
 
 async def execute(
@@ -22,8 +20,8 @@ async def execute(
         f"--box-id={box_id}",
         *ISOLATE_DIRS,
         # "--cg",
-        f"--time={TIME_LIMIT}",
-        f"--wall-time={TIME_LIMIT * 2:.1f}",
+        f"--time={settings.TIME_LIMIT}",
+        f"--wall-time={settings.TIME_LIMIT * 2:.1f}",
         # f"--cg-mem={MEMORY_LIMIT * 1024}",
         "--processes=128",
         f"--meta={meta_path}",
