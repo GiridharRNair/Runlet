@@ -49,7 +49,7 @@ async def execute(
     return ExecuteResponse(
         status=status,
         stdout=stdout,
-        stderr=stderr,
+        stderr=stderr if status != "OK" else "",
         time=float(meta["time"]) if "time" in meta else None,
         memory=int(meta["cg-mem"]) if "cg-mem" in meta else None,
     )
