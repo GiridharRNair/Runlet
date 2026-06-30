@@ -1,15 +1,15 @@
 import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
-
+from config import settings
 from services.execute_utils import run, SandboxInternalError
 
-MAX_BOXES = 10
+
 _pool: asyncio.Queue[int] = asyncio.Queue()
 
 
-def init_pool(size: int = MAX_BOXES) -> None:
-    for i in range(size):
+def init_pool() -> None:
+    for i in range(settings.MAX_BOXES):
         _pool.put_nowait(i)
 
 
