@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from routers import execute_router, health_router
+from routers import execute_router, health_router, runtimes_router
 from services import init_pool
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -21,3 +21,4 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 app.include_router(health_router)
 app.include_router(execute_router)
+app.include_router(runtimes_router)
