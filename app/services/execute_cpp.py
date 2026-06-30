@@ -46,6 +46,7 @@ async def execute(
         return ExecuteResponse(status="CE", stdout="", stderr=stderr)
 
     os.chmod(box_dir / "solution", 0o755)
+    (box_dir / "stdin.txt").write_text(stdin)
 
     _, stdout, stderr = await run(
         "isolate",
@@ -57,10 +58,10 @@ async def execute(
         # f"--cg-mem={MEMORY_LIMIT * 1024}",
         "--processes=128",
         f"--meta={meta_path}",
+        "--stdin=/box/stdin.txt",
         "--run",
         "--",
         "/box/solution",
-        stdin_data=stdin,
     )
 
     meta = parse_metadata(meta_path)

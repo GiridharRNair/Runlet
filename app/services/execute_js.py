@@ -19,6 +19,7 @@ async def execute(
     box_id: int, box_dir: Path, meta_path: str, code: str, stdin: str
 ) -> ExecuteResponse:
     (box_dir / "solution.js").write_text(code)
+    (box_dir / "stdin.txt").write_text(stdin)
 
     _, stdout, stderr = await run(
         "isolate",
@@ -30,11 +31,11 @@ async def execute(
         # f"--cg-mem={MEMORY_LIMIT * 1024}",
         "--processes=128",
         f"--meta={meta_path}",
+        "--stdin=/box/stdin.txt",
         "--run",
         "--",
         "/usr/bin/node",
         "/box/solution.js",
-        stdin_data=stdin,
     )
 
     meta = parse_metadata(meta_path)

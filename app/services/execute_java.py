@@ -43,6 +43,7 @@ async def execute(
 
     for cls_file in box_dir.glob("*.class"):
         os.chmod(cls_file, 0o644)
+    (box_dir / "stdin.txt").write_text(stdin)
 
     _, stdout, stderr = await run(
         "isolate",
@@ -54,13 +55,13 @@ async def execute(
         # f"--cg-mem={MEMORY_LIMIT * 1024}",
         "--processes=128",
         f"--meta={meta_path}",
+        "--stdin=/box/stdin.txt",
         "--run",
         "--",
         "/usr/bin/java",
         "-cp",
         "/box",
         "Main",
-        stdin_data=stdin,
     )
 
     meta = parse_metadata(meta_path)
