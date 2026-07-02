@@ -23,7 +23,7 @@ RUN jlink \
     --compress=zip-6 \
     --strip-debug \
     --add-modules java.base \
-    --output /opt/java-min
+    --output /usr/lib/jvm/java-min
 
 # ── isolate ──────────────────────────────────────────────────
 RUN git clone https://github.com/ioi/isolate /isolate \

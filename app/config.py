@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     COMPILE_TIME_LIMIT: float = 30.0
     COMPILE_MEMORY_LIMIT: int = 512
     MAX_BOXES: int = 10
+    USE_CGROUPS: bool = True
 
 
 settings = Settings()

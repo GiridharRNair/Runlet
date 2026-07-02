@@ -2,6 +2,8 @@ services:
   app:
     build: .
     privileged: true
+    environment:
+      - USE_CGROUPS=false
     ports:
       - "8000:8000"
     volumes:

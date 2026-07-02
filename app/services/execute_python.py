@@ -5,6 +5,9 @@ from services.execute_utils import (
     parse_metadata,
     SandboxInternalError,
     ISOLATE_DIRS,
+    memory_flags,
+    is_mle,
+    get_memory_used,
 )
 from config import settings
 
@@ -20,10 +23,9 @@ async def execute(
             "isolate",
             f"--box-id={box_id}",
             *ISOLATE_DIRS,
-            # "--cg",
+            *memory_flags(settings.MEMORY_LIMIT),
             f"--time={settings.TIME_LIMIT}",
             f"--wall-time={settings.TIME_LIMIT * 2:.1f}",
-            # f"--cg-mem={MEMORY_LIMIT * 1024}",
             "--processes=128",
             f"--meta={meta_path}",
             "--stdin=/box/stdin.txt",
@@ -40,7 +42,7 @@ async def execute(
 
     if isolate_status == "TO":
         status = "TLE"
-    elif meta.get("cg-oom-killed") == "1":
+    elif is_mle(meta, isolate_status):
         status = "MLE"
     elif isolate_status in ("RE", "SG"):
         status = "RE"
@@ -54,5 +56,5 @@ async def execute(
         stdout=stdout,
         stderr=stderr if status != "OK" else "",
         time=float(meta["time"]) if "time" in meta else None,
-        memory=int(meta["cg-mem"]) if "cg-mem" in meta else None,
+        memory=get_memory_used(meta),
     )

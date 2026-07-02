@@ -1,5 +1,6 @@
 import asyncio
 from pathlib import Path
+from config import settings
 
 ISOLATE_DIRS = [
     "--dir=/usr",
@@ -13,6 +14,23 @@ ISOLATE_DIRS = [
 
 class SandboxInternalError(Exception):
     pass
+
+
+def memory_flags(limit_mb: int) -> list[str]:
+    if settings.USE_CGROUPS:
+        return ["--cg", f"--cg-mem={limit_mb * 1024}"]
+    return [f"--mem={limit_mb * 1024}"]
+
+
+def is_mle(meta: dict[str, str], isolate_status: str) -> bool:
+    if settings.USE_CGROUPS:
+        return meta.get("cg-oom-killed") == "1"
+    return isolate_status == "ML"
+
+
+def get_memory_used(meta: dict[str, str]) -> int | None:
+    key = "cg-mem" if settings.USE_CGROUPS else "max-rss"
+    return int(meta[key]) if key in meta else None
 
 
 async def run(*args: str, stdin_data: str = "") -> tuple[int | None, str, str]:
