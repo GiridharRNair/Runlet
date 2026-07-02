@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     COMPILE_MEMORY_LIMIT: int = 512
     MAX_BOXES: int = 3
     USE_CGROUPS: bool = True
+    CODE_EXECUTION_RATE_LIMIT: str = "10"
 
 
 settings = Settings()

@@ -2,7 +2,10 @@ from fastapi import APIRouter, HTTPException, Request
 from models import ExecuteRequest, ExecuteResponse
 from services import execute_cpp, execute_java, execute_js, execute_python, sandbox
 from limiter import limiter
+from config import settings
 
+
+CODE_EXECUTION_RATE_LIMIT = settings.CODE_EXECUTION_RATE_LIMIT
 
 router = APIRouter()
 
@@ -15,7 +18,7 @@ _handlers = {
 
 
 @router.post("/execute", response_model=ExecuteResponse)
-@limiter.limit("10/minute")
+@limiter.limit(f"{CODE_EXECUTION_RATE_LIMIT}/minute")
 async def execute(request: Request, data: ExecuteRequest) -> ExecuteResponse:
     handler = _handlers[data.language]
     try:

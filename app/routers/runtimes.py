@@ -2,6 +2,8 @@ from fastapi import APIRouter, Request
 from models import LanguageRuntime
 from limiter import limiter
 
+ROUTE_RATE_LIMIT = "10"
+
 router = APIRouter()
 
 
@@ -26,6 +28,6 @@ RUNTIMES: list[LanguageRuntime] = [
 
 
 @router.get("/runtimes", response_model=list[LanguageRuntime])
-@limiter.limit("10/minute")
+@limiter.limit(f"{ROUTE_RATE_LIMIT}/minute")
 async def get_runtimes(request: Request) -> list[LanguageRuntime]:
     return RUNTIMES

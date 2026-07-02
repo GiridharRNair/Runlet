@@ -4,6 +4,7 @@ services:
     privileged: true
     environment:
       - USE_CGROUPS=false
+      - CODE_EXECUTION_RATE_LIMIT=100
     ports:
       - "8000:8000"
     volumes:
