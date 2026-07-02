@@ -12,7 +12,7 @@ from config import settings
 async def execute(
     box_id: int, box_dir: Path, meta_path: str, code: str, stdin: str
 ) -> ExecuteResponse:
-    (box_dir / "solution.js").write_text(code)
+    (box_dir / "main.js").write_text(code)
     (box_dir / "stdin.txt").write_text(stdin)
 
     try:
@@ -30,7 +30,7 @@ async def execute(
             "--run",
             "--",
             "/usr/bin/node",
-            "/box/solution.js",
+            "/box/main.js",
         )
     except OSError as e:
         raise OSError(f"JavaScript execute phase: {e}") from e

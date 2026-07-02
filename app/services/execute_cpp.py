@@ -13,7 +13,7 @@ from config import settings
 async def execute(
     box_id: int, box_dir: Path, meta_path: str, code: str, stdin: str
 ) -> ExecuteResponse:
-    (box_dir / "solution.cpp").write_text(code)
+    (box_dir / "main.cpp").write_text(code)
 
     try:
         rc, _, stderr = await run(
@@ -31,8 +31,8 @@ async def execute(
             "/usr/bin/g++",
             "-O2",
             "-o",
-            "/box/solution",
-            "/box/solution.cpp",
+            "/box/main",
+            "/box/main.cpp",
         )
     except OSError as e:
         raise OSError(f"C++ compile phase: {e}") from e
@@ -40,7 +40,7 @@ async def execute(
     if rc != 0:
         return ExecuteResponse(status="CE", stdout="", stderr=stderr)
 
-    os.chmod(box_dir / "solution", 0o755)
+    os.chmod(box_dir / "main", 0o755)
     (box_dir / "stdin.txt").write_text(stdin)
 
     try:
@@ -57,7 +57,7 @@ async def execute(
             "--stdin=/box/stdin.txt",
             "--run",
             "--",
-            "/box/solution",
+            "/box/main",
         )
     except OSError as e:
         raise OSError(f"C++ execute phase: {e}") from e

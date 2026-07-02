@@ -12,7 +12,7 @@ from config import settings
 async def execute(
     box_id: int, box_dir: Path, meta_path: str, code: str, stdin: str
 ) -> ExecuteResponse:
-    (box_dir / "solution.py").write_text(code)
+    (box_dir / "main.py").write_text(code)
     (box_dir / "stdin.txt").write_text(stdin)
 
     try:
@@ -30,7 +30,7 @@ async def execute(
             "--run",
             "--",
             "/usr/bin/python3",
-            "/box/solution.py",
+            "/box/main.py",
         )
     except OSError as e:
         raise OSError(f"Python execute phase: {e}") from e
