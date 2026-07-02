@@ -41,9 +41,14 @@ async def run(*args: str, stdin_data: str = "") -> tuple[int | None, str, str]:
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        stdout, stderr = await proc.communicate(input=stdin_data.encode())
     except OSError as e:
         raise OSError(f"Failed to spawn '{args[0]}': {e}") from e
+    try:
+        stdout, stderr = await proc.communicate(input=stdin_data.encode())
+    except asyncio.CancelledError:
+        proc.kill()
+        await proc.wait()
+        raise
     return (
         proc.returncode,
         stdout.decode(errors="replace"),
