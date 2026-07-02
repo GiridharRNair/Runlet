@@ -10,13 +10,20 @@ RUN apt-get update && apt-get install -y \
     libsystemd-dev \
     pkg-config \
     git \
-    curl \
     nodejs \
-    npm \
-    default-jdk \
+    openjdk-21-jdk-headless \
     gcc \
     g++ \
     && rm -rf /var/lib/apt/lists/*
+
+# Build minimal runtime for execution only
+RUN jlink \
+    --no-header-files \
+    --no-man-pages \
+    --compress=zip-6 \
+    --strip-debug \
+    --add-modules java.base \
+    --output /opt/java-min
 
 # ── isolate ──────────────────────────────────────────────────
 RUN git clone https://github.com/ioi/isolate /isolate \
