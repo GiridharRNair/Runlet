@@ -52,11 +52,12 @@ async def run(*args: str, stdin_data: str = "") -> tuple[int | None, str, str]:
 
 
 def parse_metadata(path: str) -> dict[str, str]:
-    meta: dict[str, str] = {}
     try:
-        for line in Path(path).read_text().splitlines():
-            key, _, value = line.partition(":")
-            meta[key] = value
+        text = Path(path).read_text()
     except FileNotFoundError:
-        pass
+        raise SandboxInternalError(f"Metadata file not created by isolate: {path}")
+    meta: dict[str, str] = {}
+    for line in text.splitlines():
+        key, _, value = line.partition(":")
+        meta[key] = value
     return meta

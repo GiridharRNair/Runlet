@@ -37,7 +37,10 @@ async def execute(
     except OSError as e:
         raise OSError(f"JavaScript execute phase: {e}") from e
 
-    meta = parse_metadata(meta_path)
+    try:
+        meta = parse_metadata(meta_path)
+    except SandboxInternalError as e:
+        raise SandboxInternalError(f"JavaScript execute phase: {e}") from e
     isolate_status = meta.get("status", "")
 
     if isolate_status == "TO":

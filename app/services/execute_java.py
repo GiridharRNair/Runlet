@@ -74,7 +74,10 @@ async def execute(
     except OSError as e:
         raise OSError(f"Java execute phase: {e}") from e
 
-    meta = parse_metadata(meta_path)
+    try:
+        meta = parse_metadata(meta_path)
+    except SandboxInternalError as e:
+        raise SandboxInternalError(f"Java execute phase: {e}") from e
     isolate_status = meta.get("status", "")
 
     if isolate_status == "TO":
