@@ -6,22 +6,10 @@ from services.execute_utils import (
     parse_metadata,
     SandboxInternalError,
     ISOLATE_DIRS,
-    is_mle,
+    memory_flags,
     get_memory_used,
 )
 from config import settings
-
-
-def _java_memory_flags(limit_mb: int) -> list[str]:
-    """
-    The JVM reserves a large virtual address space upfront before any user code runs, so --mem
-    (which limits virtual memory, not physical) would kill Java during startup rather than when it
-    actually exceeds a meaningful memory threshold — making the limit misleading and unusable in
-    dev. In production, cgroups measure physical memory accurately so the limit works as intended.
-    """
-    if settings.USE_CGROUPS:
-        return ["--cg", f"--cg-mem={limit_mb * 1024}"]
-    return []
 
 
 async def execute(
@@ -34,7 +22,7 @@ async def execute(
             "isolate",
             f"--box-id={box_id}",
             *ISOLATE_DIRS,
-            *_java_memory_flags(settings.COMPILE_MEMORY_LIMIT),
+            *memory_flags(settings.COMPILE_MEMORY_LIMIT),
             f"--time={settings.COMPILE_TIME_LIMIT}",
             f"--wall-time={settings.COMPILE_TIME_LIMIT * 2:.1f}",
             "--processes=128",
@@ -58,7 +46,7 @@ async def execute(
             "isolate",
             f"--box-id={box_id}",
             *ISOLATE_DIRS,
-            *_java_memory_flags(settings.MEMORY_LIMIT),
+            *memory_flags(settings.MEMORY_LIMIT),
             f"--time={settings.TIME_LIMIT}",
             f"--wall-time={settings.TIME_LIMIT * 2:.1f}",
             "--processes=128",
@@ -82,7 +70,7 @@ async def execute(
 
     if isolate_status == "TO":
         status = "TLE"
-    elif is_mle(meta, isolate_status):
+    elif meta.get("cg-oom-killed") == "1":
         status = "MLE"
     elif isolate_status in ("RE", "SG"):
         status = "RE"

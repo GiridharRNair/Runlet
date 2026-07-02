@@ -6,7 +6,6 @@ from services.execute_utils import (
     SandboxInternalError,
     ISOLATE_DIRS,
     memory_flags,
-    is_mle,
     get_memory_used,
 )
 from config import settings
@@ -31,7 +30,7 @@ async def execute(
             "--stdin=/box/stdin.txt",
             "--run",
             "--",
-            "/usr/bin/python3",
+            "/usr/local/bin/python3",
             "/box/main.py",
         )
     except OSError as e:
@@ -45,7 +44,7 @@ async def execute(
 
     if isolate_status == "TO":
         status = "TLE"
-    elif is_mle(meta, isolate_status):
+    elif meta.get("cg-oom-killed") == "1":
         status = "MLE"
     elif isolate_status in ("RE", "SG"):
         status = "RE"
