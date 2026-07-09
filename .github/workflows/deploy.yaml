@@ -1,0 +1,63 @@
+name: Deploy to DigitalOcean
+
+on:
+  workflow_run:
+    workflows: ["Build and Push to GHCR"]   # must match the `name:` in docker-publish.yml
+    branches: [ "main" ]
+    types:
+      - completed
+  workflow_dispatch: {}   # allows manual runs from the Actions tab
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  deploy:
+    # Only deploy if the build workflow succeeded (skip on failed builds or manual trigger from a stale run)
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set lowercase image name
+        id: image
+        run: echo "name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      - name: Copy docker-compose.prod.yml to droplet
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USERNAME }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          port: ${{ secrets.DO_PORT || 22 }}
+          source: "docker-compose.prod.yml"
+          target: "/opt/myapp"
+          strip_components: 0
+
+      - name: Deploy to DigitalOcean droplet
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USERNAME }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          port: ${{ secrets.DO_PORT || 22 }}
+          script: |
+            set -e
+            cd /opt/myapp
+
+            # Log in to GHCR so compose can pull the (likely private) image
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+
+            # Export the image reference so docker-compose.prod.yml can pick it up via ${IMAGE}
+            export IMAGE="${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest"
+
+            # Pull the new image(s) defined in the compose file
+            docker compose -f docker-compose.prod.yml pull
+
+            # Recreate only the containers whose image/config changed
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+
+            # Clean up old, unused images to save disk space
+            docker image prune -f
