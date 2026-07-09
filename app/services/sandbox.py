@@ -22,12 +22,9 @@ class sandbox:
         return self._box_id, box_dir, meta_path
 
     async def __aexit__(self, *_) -> None:
-        cg_flag = ["--cg"] if settings.USE_CGROUPS else []
         try:
-            await run("isolate", f"--box-id={self._box_id}", *cg_flag, "--cleanup")
-            rc, _, stderr = await run(
-                "isolate", f"--box-id={self._box_id}", *cg_flag, "--init"
-            )
+            await run("isolate", f"--box-id={self._box_id}", "--cleanup")
+            rc, _, stderr = await run("isolate", f"--box-id={self._box_id}", "--init")
             if rc != 0:
                 raise SandboxInternalError(
                     f"Failed to reset sandbox {self._box_id}: {stderr}"
