@@ -26,9 +26,15 @@ RUN jlink \
     --output /usr/lib/jvm/java-min
 
 # ── isolate ──────────────────────────────────────────────────
+# isolate's default config points cg_root at "auto:/run/isolate/cgroup",
+# a file that systemd's isolate-cg-keeper daemon writes on startup. There's
+# no systemd in this container, so that file never appears and every --cg
+# call dies with "Cannot open /run/isolate/cgroup". Point cg_root at a
+# fixed path instead; entrypoint.sh delegates the memory controller to it.
 RUN git clone https://github.com/ioi/isolate /isolate \
     && cd /isolate \
     && make install \
+    && sed -i 's|^cg_root = .*|cg_root = /sys/fs/cgroup/isolate|' /usr/local/etc/isolate \
     && rm -rf /isolate
 
 # ── isolate user (required for user namespace mappings) ──────
