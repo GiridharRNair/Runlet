@@ -142,7 +142,7 @@ docker compose -f docker-compose.dev.yml up
 This starts the API with hot reload at `http://localhost:8000`.
 
 > [!NOTE]  
-> `docker-compose.dev.yml` sets `USE_CGROUPS=false`. Cgroups are a Linux kernel feature that `isolate` uses to enforce memory limits on sandboxed code, and they aren't available the same way on macOS (Docker Desktop runs containers inside a Linux VM, which doesn't expose cgroup control to the container like a native Linux host does). This project is developed on macOS, so cgroups are disabled by default locally. With `USE_CGROUPS=false`, memory limits aren't enforced and the `MLE` status will never be returned. In production, `USE_CGROUPS=true` so memory limits are enforced normally.
+> The Docker compose in development sets `USE_CGROUPS=false`. `isolate` uses cgroups, a Linux kernel feature, to enforce memory limits, but Docker Desktop on macOS (used for local development) doesn't expose cgroup control the way a native Linux host does. With cgroups disabled, memory limits aren't enforced and `MLE` is never returned locally. In production, `USE_CGROUPS=true` enforces memory limits normally.
 
 ## Configuration
 
