@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-for i in $(seq 0 9); do
+for i in $(seq 0 $((${MAX_BOXES:-3} - 1))); do
     isolate --init --box-id=$i
 done
 
