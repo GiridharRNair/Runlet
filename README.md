@@ -4,42 +4,56 @@
 
 Lightweight REST API for executing single-file code in a sandboxed environment. Supports Python, JavaScript (Node.js), C++, and Java.
 
-## Features
+Built to support [CodeAlong](https://github.com/GiridharRNair/CodeAlong). A platform for simple single file real-time collaborative code editor. Create a room, share the link, and code together instantly — no sign-up required. Perfect for pair programming, technical interviews, and tutoring sessions.
 
-- Sandboxed execution via [isolate](https://github.com/ioi/isolate) (the IOI contest sandbox) — per-run process, filesystem, and cgroup memory isolation
-- Configurable time and memory limits, with `TLE` / `MLE` / `RE` / `CE` status reporting
-- A small pool of reusable sandboxes (`MAX_BOXES`) so requests queue instead of spawning unbounded processes
-- Per-IP rate limiting on execution requests
-- Runs behind Caddy in production for automatic HTTPS
+## Architecture
+
+<p align="center">
+  <img src="assets/architecture.png" alt="Architecture" width="800">
+</p>
+
+On every push to `main`, a GitHub Actions pipeline builds the FastAPI app into a Docker image and pushes it to the GitHub Container Registry, then deploys it to a DigitalOcean droplet over SSH. The image bakes in the runtimes for every supported language (Python, Node.js, g++, and the JDK), so no language install happens at request time — a submission just needs the right interpreter or compiler already sitting on disk. On the droplet, Caddy sits in front of the app as a reverse proxy and handles HTTPS automatically, so the app itself only has to speak plain HTTP internally.
+
+Inside the app container, code isn't run directly on the host or in a per-request Docker container — it runs inside [isolate](https://github.com/ioi/isolate), the sandbox built for the IOI programming contest. Spinning up a new Docker container for every submission would be too slow for a request/response API, and running untrusted code directly on the host isn't safe. Isolate solves both problems: it keeps a small fixed pool of sandbox "boxes" (`MAX_BOXES`) that are reset and reused between requests instead of created from scratch, while still giving each run its own isolated filesystem, process namespace, and (on Linux) cgroup-enforced memory limit. That reuse is what makes it practical to run arbitrary user code on a shared server, per request, without long startup times or one submission being able to see or affect another.
 
 ## API
 
-| Method | Path        | Description                             |
-| ------ | ----------- | ---------------------------------------- |
-| POST   | `/execute`  | Run a single file of code                |
-| GET    | `/runtimes` | List supported languages and versions    |
-| GET    | `/health`   | Health check                             |
+Production API: `https://runlet.codealong.live`
+
+| Method | Path        | Description                            |
+| ------ | ----------- | --------------------------------------- |
+| POST   | `/execute`  | Run a single file of code               |
+| GET    | `/runtimes` | List supported languages and versions   |
+| GET    | `/health`   | Health check                            |
 
 ### `POST /execute`
 
-Request:
+Request schema:
 
-```json
-{
-  "language": "python",
-  "code": "print('hi')",
-  "stdin": ""
-}
+| Field      | Type   | Required | Description                                    |
+| ---------- | ------ | -------- | ------------------------------------------------ |
+| `language` | string | yes      | One of `python`, `javascript`, `cpp`, `java`      |
+| `code`     | string | yes      | Source code to run                               |
+| `stdin`    | string | no       | Input piped to the program, defaults to `""`     |
+
+Example request:
+
+```bash
+curl -X POST https://runlet.codealong.live/execute \
+  -H "Content-Type: application/json" \
+  -d '{
+    "language": "python",
+    "code": "print(input())",
+    "stdin": "hello"
+  }'
 ```
 
-`language` is one of `python`, `javascript`, `cpp`, `java`.
-
-Response:
+Example response:
 
 ```json
 {
   "status": "OK",
-  "stdout": "hi\n",
+  "stdout": "hello\n",
   "stderr": "",
   "time": 0.031,
   "memory": 8192
@@ -54,27 +68,57 @@ Response:
 - `RE` — runtime error (non-zero exit, signal, etc.)
 - `CE` — compile error (C++ and Java only)
 
+### `GET /runtimes`
+
+No request body.
+
+Example request:
+
+```bash
+curl https://runlet.codealong.live/runtimes
+```
+
+Example response:
+
+```json
+[
+  { "language_name": "Python", "language_version": "3.13.14" },
+  { "language_name": "JavaScript (Node.js)", "language_version": "20.19.2" },
+  { "language_name": "C++ (g++)", "language_version": "14.2.0" },
+  { "language_name": "Java", "language_version": "21.0.11" }
+]
+```
+
+### `GET /health`
+
+No request body.
+
+Example request:
+
+```bash
+curl https://runlet.codealong.live/health
+```
+
+Example response:
+
+```json
+{
+  "status": "healthy"
+}
+```
+
 ## Running locally
 
 Requires [uv](https://docs.astral.sh/uv/) and Docker.
 
 ```bash
 uv sync
-uv run ruff check .
-uv run ruff format .
-```
-
-**Dev** (hot reload, memory limits disabled, mounts source into the container):
-
-```bash
 docker compose -f docker-compose.dev.yml up
 ```
 
-**Prod-like** (runs a built image behind Caddy; requires an image pushed to GHCR):
+This starts the API with hot reload at `http://localhost:8000`.
 
-```bash
-IMAGE=ghcr.io/giridharrnair/code-execution-engine-api:latest docker compose up
-```
+> **Note on CGROUPS:** `docker-compose.dev.yml` sets `USE_CGROUPS=false`. Cgroups are a Linux kernel feature that `isolate` uses to enforce memory limits on sandboxed code, and they aren't available the same way on macOS (Docker Desktop runs containers inside a Linux VM, which doesn't expose cgroup control to the container like a native Linux host does). This project is developed on macOS, so cgroups are disabled by default locally. With `USE_CGROUPS=false`, memory limits aren't enforced and the `MLE` status will never be returned. In production, `USE_CGROUPS=true` so memory limits are enforced normally.
 
 ## Configuration
 
@@ -90,21 +134,24 @@ Set via environment variables — see [`app/config.py`](app/config.py):
 | `USE_CGROUPS`                 | `true`  | Enforce memory limits via cgroups (disabled in `docker-compose.dev.yml`) |
 | `CODE_EXECUTION_RATE_LIMIT`   | `10`    | Requests per minute allowed to `/execute` per IP                      |
 
-## Testing
+## Tests and other commands
 
-Integration tests hit a running instance of the API over HTTP:
+Common tasks are run through [Poe the Poet](https://poethepoet.natn.io/). Task definitions are in [`pyproject.toml`](pyproject.toml).
 
 ```bash
-API_URL=http://localhost:8000 uv run pytest
+uv run poe format                  # format code with ruff
+uv run poe lint                    # lint code with ruff
+uv run poe test_python             # run Python language tests
+uv run poe test_js                 # run JavaScript language tests
+uv run poe test_cpp                # run C++ language tests
+uv run poe test_java               # run Java language tests
+uv run poe test_all_langs          # run all language tests
+uv run poe test_memory_limit       # run memory limit tests against the local API
+uv run poe test_prod_memory_limit  # run memory limit tests against the production API
 ```
 
-Set `USE_CGROUPS` to match whatever server you're testing against — the memory-limit tests assert different behavior depending on whether cgroup enforcement is on.
+The language tests hit a running instance of the API over HTTP. They use the `API_URL` environment variable, defaulting to `http://localhost:8000` if it isn't set, so start the API locally first (see "Running locally" above) before running them.
 
-## Deployment
+## License
 
-On every push to `main`:
-
-1. [`docker-publish.yaml`](.github/workflows/docker-publish.yaml) builds the image and pushes it to GHCR.
-2. [`deploy.yaml`](.github/workflows/deploy.yaml) copies `docker-compose.yml` and `Caddyfile` to a DigitalOcean droplet over SSH, pulls the new image, and recreates the containers. Caddy handles automatic HTTPS in front of the app.
-
-Required repo secrets: `DO_HOST`, `DO_USERNAME`, `DO_SSH_KEY`, and optionally `DO_PORT`.
+This project is licensed under the MIT License. Open to contributions!
