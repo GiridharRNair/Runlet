@@ -23,19 +23,38 @@ API URL: `https://runlet.codealong.live`
 
 There's no authentication — every route is rate limited per IP instead (see below). Any route that goes over its limit returns `429` with a body like `{"error": "Rate limit exceeded: 10 per 1 minute"}`.
 
-| Method | Path        | Description                            | Rate limit                       |
-| ------ | ----------- | --------------------------------------- | ---------------------------------- |
-| POST   | `/execute`  | Run a single file of code               | 10/minute                          |
-| GET    | `/runtimes` | List supported languages and versions   | 10/minute                          |
-| GET    | `/health`   | Health check                            | 10/minute                          |
+| Method | Path        | Description                            | Rate limit |
+| ------ | ----------- | --------------------------------------- | ---------- |
+| POST   | `/execute`  | Run a single file of code               | 10/minute  |
+| GET    | `/runtimes` | List supported languages and versions   | 10/minute  |
 
 ### `POST /execute`
 
-Runs one submission inside a sandbox and returns its result. Requires a JSON body:
+Runs one submission inside a sandbox and returns its result.
 
-- `language` (string, required) — `python`, `javascript`, `cpp`, or `java`
-- `code` (string, required) — source code to run
-- `stdin` (string, optional, default `""`) — piped to the program as input
+Request schema:
+
+```json
+{
+  "language": "python | javascript | cpp | java",
+  "code": "string",
+  "stdin": "string, optional, defaults to \"\""
+}
+```
+
+Response schema:
+
+```json
+{
+  "status": "OK | TLE | MLE | RE | CE",
+  "stdout": "string",
+  "stderr": "string",
+  "time": "float | null, seconds",
+  "memory": "int | null, KB"
+}
+```
+
+Example request:
 
 ```bash
 curl -X POST https://runlet.codealong.live/execute \
@@ -47,13 +66,7 @@ curl -X POST https://runlet.codealong.live/execute \
   }'
 ```
 
-Returns:
-
-- `status` (string) — `OK`, `TLE`, `MLE`, `RE`, or `CE` (see below)
-- `stdout` (string) — captured standard output
-- `stderr` (string) — captured standard error
-- `time` (float or null) — wall time used, in seconds
-- `memory` (int or null) — peak memory used, in KB
+Example response:
 
 ```json
 {
@@ -84,14 +97,24 @@ Other responses:
 
 Lists the language runtimes baked into the Docker image. No request body.
 
+Response schema:
+
+```json
+[
+  {
+    "language_name": "string",
+    "language_version": "string"
+  }
+]
+```
+
+Example request:
+
 ```bash
 curl https://runlet.codealong.live/runtimes
 ```
 
-Returns a list of objects, each with:
-
-- `language_name` (string) — display name of the language
-- `language_version` (string) — version of the language runtime
+Example response:
 
 ```json
 [
@@ -100,24 +123,6 @@ Returns a list of objects, each with:
   { "language_name": "C++ (g++)", "language_version": "14.2.0" },
   { "language_name": "Java", "language_version": "21.0.11" }
 ]
-```
-
-### `GET /health`
-
-Reports whether the service is up. No request body.
-
-```bash
-curl https://runlet.codealong.live/health
-```
-
-Returns:
-
-- `status` (string) — always `healthy`
-
-```json
-{
-  "status": "healthy"
-}
 ```
 
 ## Running locally
