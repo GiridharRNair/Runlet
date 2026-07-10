@@ -21,33 +21,21 @@ The Docker image deployed on the droplet bakes in the runtimes for every support
 
 API URL: `https://runlet.codealong.live`
 
-| Method | Path        | Description                            |
-| ------ | ----------- | --------------------------------------- |
-| POST   | `/execute`  | Run a single file of code               |
-| GET    | `/runtimes` | List supported languages and versions   |
-| GET    | `/health`   | Health check                            |
+There's no authentication — every route is rate limited per IP instead (see below). Any route that goes over its limit returns `429` with a body like `{"error": "Rate limit exceeded: 10 per 1 minute"}`.
+
+| Method | Path        | Description                            | Rate limit                       |
+| ------ | ----------- | --------------------------------------- | ---------------------------------- |
+| POST   | `/execute`  | Run a single file of code               | 10/minute                          |
+| GET    | `/runtimes` | List supported languages and versions   | 10/minute                          |
+| GET    | `/health`   | Health check                            | 10/minute                          |
 
 ### `POST /execute`
 
-Request schema:
+Runs one submission inside a sandbox and returns its result. Requires a JSON body:
 
-| Field      | Type   | Required | Description                                    |
-| ---------- | ------ | -------- | ------------------------------------------------ |
-| `language` | string | yes      | One of `python`, `javascript`, `cpp`, `java`      |
-| `code`     | string | yes      | Source code to run                               |
-| `stdin`    | string | no       | Input piped to the program, defaults to `""`     |
-
-Response schema:
-
-| Field    | Type          | Description                                    |
-| -------- | ------------- | ------------------------------------------------ |
-| `status` | string        | One of `OK`, `TLE`, `MLE`, `RE`, `CE`              |
-| `stdout` | string        | Captured standard output                          |
-| `stderr` | string        | Captured standard error                           |
-| `time`   | float or null | Wall time used, in seconds                        |
-| `memory` | int or null   | Peak memory used, in KB                           |
-
-Example request:
+- `language` (string, required) — `python`, `javascript`, `cpp`, or `java`
+- `code` (string, required) — source code to run
+- `stdin` (string, optional, default `""`) — piped to the program as input
 
 ```bash
 curl -X POST https://runlet.codealong.live/execute \
@@ -59,7 +47,13 @@ curl -X POST https://runlet.codealong.live/execute \
   }'
 ```
 
-Example response:
+Returns:
+
+- `status` (string) — `OK`, `TLE`, `MLE`, `RE`, or `CE` (see below)
+- `stdout` (string) — captured standard output
+- `stderr` (string) — captured standard error
+- `time` (float or null) — wall time used, in seconds
+- `memory` (int or null) — peak memory used, in KB
 
 ```json
 {
@@ -71,22 +65,33 @@ Example response:
 }
 ```
 
+`status` values:
+
+| Status | Meaning                                                     |
+| ------ | -------------------------------------------------------------- |
+| `OK`   | Ran successfully                                                |
+| `TLE`  | Time limit exceeded                                             |
+| `MLE`  | Memory limit exceeded (only enforced when `USE_CGROUPS=true`)  |
+| `RE`   | Runtime error (non-zero exit, signal, etc.)                     |
+| `CE`   | Compile error (C++ and Java only)                               |
+
+Other responses:
+
+- `422` — body failed validation (e.g. `language` isn't one of the four supported values)
+- `500` — the sandbox itself failed to run the submission, `{"detail": "<error>"}`
+
 ### `GET /runtimes`
 
-Example request:
+Lists the language runtimes baked into the Docker image. No request body.
 
 ```bash
 curl https://runlet.codealong.live/runtimes
 ```
 
-Response schema (list of):
+Returns a list of objects, each with:
 
-| Field              | Type   | Description                     |
-| ------------------- | ------ | --------------------------------- |
-| `language_name`     | string | Display name of the language      |
-| `language_version`  | string | Version of the language runtime   |
-
-Example response:
+- `language_name` (string) — display name of the language
+- `language_version` (string) — version of the language runtime
 
 ```json
 [
@@ -99,19 +104,15 @@ Example response:
 
 ### `GET /health`
 
-Example request:
+Reports whether the service is up. No request body.
 
 ```bash
 curl https://runlet.codealong.live/health
 ```
 
-Response schema:
+Returns:
 
-| Field    | Type   | Description         |
-| -------- | ------ | --------------------- |
-| `status` | string | Always `healthy`      |
-
-Example response:
+- `status` (string) — always `healthy`
 
 ```json
 {
