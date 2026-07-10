@@ -132,14 +132,19 @@ Example response:
 - [Python 3.13+](https://www.python.org/downloads/)
 - [uv](https://docs.astral.sh/uv/) 
 
-### Run API
+1. Install dependencies
 
 ```bash
 uv sync
+```
+
+2. Start the API in development mode
+
+```bash
 docker compose -f docker-compose.dev.yml up
 ```
 
-This starts the API with hot reload at `http://localhost:8000`.
+The API with hot reload will be available at `http://localhost:8000`.
 
 > [!NOTE]  
 > The Docker compose in development sets `USE_CGROUPS=false`. `isolate` uses cgroups, a Linux kernel feature, to enforce memory limits, but Docker Desktop on macOS (used for local development) doesn't expose cgroup control the way a native Linux host does. With cgroups disabled, memory limits aren't enforced and `MLE` is never returned locally. In production, `USE_CGROUPS=true` enforces memory limits normally.
