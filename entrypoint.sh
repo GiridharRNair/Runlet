@@ -10,7 +10,7 @@ echo $$ > /sys/fs/cgroup/init/cgroup.procs
 echo +memory > /sys/fs/cgroup/cgroup.subtree_control
 echo +memory > /sys/fs/cgroup/isolate/cgroup.subtree_control
 
-for i in $(seq 0 $((${MAX_BOXES:-3} - 1))); do
+for i in $(seq 0 2); do
     isolate --cg --init --box-id=$i
 done
 
