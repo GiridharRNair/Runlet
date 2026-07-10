@@ -13,9 +13,24 @@ dependencies = [
 [dependency-groups]
 dev = [
     "httpx>=0.28.0",
+    "poethepoet>=0.30.0",
     "pytest>=8.0.0",
     "ruff>=0.15.18",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.poe.tasks]
+format = "ruff format ."
+lint = "ruff check ."
+test_cpp = "pytest tests/test_cpp.py"
+test_java = "pytest tests/test_java.py"
+test_python = "pytest tests/test_python.py"
+test_js = "pytest tests/test_js.py"
+test_all_langs = "pytest tests/test_cpp.py tests/test_java.py tests/test_python.py tests/test_js.py"
+test_memory_limit = "pytest tests/test_memory_limit.py"
+
+[tool.poe.tasks.test_prod_memory_limit]
+cmd = "pytest tests/test_memory_limit.py"
+env = { API_URL = "https://runlet.codealong.live" }
