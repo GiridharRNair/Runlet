@@ -4,7 +4,7 @@
 
 Lightweight REST API for executing single-file code in a sandboxed environment. Supports Python, JavaScript (Node.js), C++, and Java.
 
-Built to support [CodeAlong](https://github.com/GiridharRNair/CodeAlong). A platform for simple single file real-time collaborative code editor. Create a room, share the link, and code together instantly — no sign-up required. Perfect for pair programming, technical interviews, and tutoring sessions.
+Built to support [CodeAlong](https://github.com/GiridharRNair/CodeAlong). A platform for single file real-time collaborative code editing and execution.
 
 ## Architecture
 
@@ -12,13 +12,14 @@ Built to support [CodeAlong](https://github.com/GiridharRNair/CodeAlong). A plat
   <img src="assets/architecture.png" alt="Architecture" width="800">
 </p>
 
-On every push to `main`, a GitHub Actions pipeline builds the FastAPI app into a Docker image and pushes it to the GitHub Container Registry, then deploys it to a DigitalOcean droplet over SSH. The image bakes in the runtimes for every supported language (Python, Node.js, g++, and the JDK), so no language install happens at request time — a submission just needs the right interpreter or compiler already sitting on disk. On the droplet, Caddy sits in front of the app as a reverse proxy and handles HTTPS automatically, so the app itself only has to speak plain HTTP internally.
+The service is hosted on a Digital Ocean droplet, where code changes are deployed through CI/CD pipelines managed by GitHub Actions. On the droplet, Caddy sits in front of the app as a reverse proxy and handles HTTPS automatically, so the app itself only has to speak plain HTTP internally.
 
-Inside the app container, code isn't run directly on the host or in a per-request Docker container — it runs inside [isolate](https://github.com/ioi/isolate), the sandbox built for the IOI programming contest. Spinning up a new Docker container for every submission would be too slow for a request/response API, and running untrusted code directly on the host isn't safe. Isolate solves both problems: it keeps a small fixed pool of sandbox "boxes" (`MAX_BOXES`) that are reset and reused between requests instead of created from scratch, while still giving each run its own isolated filesystem, process namespace, and (on Linux) cgroup-enforced memory limit. That reuse is what makes it practical to run arbitrary user code on a shared server, per request, without long startup times or one submission being able to see or affect another.
 
-## API
+The Docker image deployed on the droplet bakes in the runtimes for every supported language (Python, Node.js, g++, and the JDK), so no language installation happens at request time. Inside the app container, code isn't run directly on the host or in a per-request Docker container, it runs inside three isolated sandboxes built around [isolate](https://github.com/ioi/isolate), the sandbox built for the IOI programming contest.
 
-Production API: `https://runlet.codealong.live`
+## API Reference
+
+API URL: `https://runlet.codealong.live`
 
 | Method | Path        | Description                            |
 | ------ | ----------- | --------------------------------------- |
