@@ -37,6 +37,16 @@ Request schema:
 | `code`     | string | yes      | Source code to run                               |
 | `stdin`    | string | no       | Input piped to the program, defaults to `""`     |
 
+Response schema:
+
+| Field    | Type          | Description                                    |
+| -------- | ------------- | ------------------------------------------------ |
+| `status` | string        | One of `OK`, `TLE`, `MLE`, `RE`, `CE`              |
+| `stdout` | string        | Captured standard output                          |
+| `stderr` | string        | Captured standard error                           |
+| `time`   | float or null | Wall time used, in seconds                        |
+| `memory` | int or null   | Peak memory used, in KB                           |
+
 Example request:
 
 ```bash
@@ -61,23 +71,20 @@ Example response:
 }
 ```
 
-`status` is one of:
-
-- `OK` — ran successfully
-- `TLE` — time limit exceeded
-- `MLE` — memory limit exceeded (only enforced when `USE_CGROUPS=true`)
-- `RE` — runtime error (non-zero exit, signal, etc.)
-- `CE` — compile error (C++ and Java only)
-
 ### `GET /runtimes`
-
-No request body.
 
 Example request:
 
 ```bash
 curl https://runlet.codealong.live/runtimes
 ```
+
+Response schema (list of):
+
+| Field              | Type   | Description                     |
+| ------------------- | ------ | --------------------------------- |
+| `language_name`     | string | Display name of the language      |
+| `language_version`  | string | Version of the language runtime   |
 
 Example response:
 
@@ -92,13 +99,17 @@ Example response:
 
 ### `GET /health`
 
-No request body.
-
 Example request:
 
 ```bash
 curl https://runlet.codealong.live/health
 ```
+
+Response schema:
+
+| Field    | Type   | Description         |
+| -------- | ------ | --------------------- |
+| `status` | string | Always `healthy`      |
 
 Example response:
 
