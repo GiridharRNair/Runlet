@@ -126,7 +126,7 @@ Example response:
 
 ## Local Development
 
-### Prerequisites
+Make sure you have the following installed:
 
 - [Docker](https://docs.docker.com/get-docker/)
 - [Python 3.13+](https://www.python.org/downloads/)
@@ -147,7 +147,7 @@ docker compose -f docker-compose.dev.yml up
 The API with hot reload will be available at `http://localhost:8000`.
 
 > [!NOTE]  
-> The Docker compose in development sets `USE_CGROUPS=false`. `isolate` uses cgroups, a Linux kernel feature, to enforce memory limits, but Docker Desktop on macOS (used for local development) doesn't expose cgroup control the way a native Linux host does. With cgroups disabled, memory limits aren't enforced and `MLE` is never returned locally. In production, `USE_CGROUPS=true` enforces memory limits normally.
+> The Docker compose in development sets the environment variable `USE_CGROUPS` to false. [Isolate](https://github.com/ioi/isolate) uses cgroups, a Linux kernel feature, to enforce memory limits, but Docker Desktop on macOS (used for local development) doesn't expose cgroup control the way a native Linux host does. With cgroups disabled, memory limits aren't enforced and `MLE` is never returned locally. In production, `USE_CGROUPS` is set to true and enforces memory limits normally.
 
 ## Configuration
 
