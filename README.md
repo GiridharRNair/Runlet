@@ -14,14 +14,13 @@ Built to support [CodeAlong](https://github.com/GiridharRNair/CodeAlong). A plat
 
 The service is hosted on a Digital Ocean droplet, where code changes are deployed through CI/CD pipelines managed by GitHub Actions. On the droplet, Caddy sits in front of the app as a reverse proxy and handles HTTPS automatically, so the app itself only has to speak plain HTTP internally.
 
-
 The Docker image deployed on the droplet bakes in the runtimes for every supported language (Python, Node.js, g++, and the JDK), so no language installation happens at request time. Inside the app container, code isn't run directly on the host or in a per-request Docker container, it runs inside three isolated sandboxes built around [isolate](https://github.com/ioi/isolate), the sandbox built for the IOI programming contest.
 
 ## API Reference
 
 API URL: `https://runlet.codealong.live`
 
-There's no authentication — every route is rate limited per IP instead (see below). Any route that goes over its limit returns `429` with a body like `{"error": "Rate limit exceeded: 10 per 1 minute"}`.
+You can also access the OpenAPI spec at `https://runlet.codealong.live/openapi.json` or the Swagger UI at `https://runlet.codealong.live/docs`.
 
 | Method | Path        | Description                            | Rate limit |
 | ------ | ----------- | --------------------------------------- | ---------- |
@@ -125,9 +124,15 @@ Example response:
 ]
 ```
 
-## Running locally
+## Local Development
 
-Requires [uv](https://docs.astral.sh/uv/) and Docker.
+### Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/)
+- [Python 3.13+](https://www.python.org/downloads/)
+- [uv](https://docs.astral.sh/uv/) 
+
+### Run API
 
 ```bash
 uv sync
@@ -136,7 +141,8 @@ docker compose -f docker-compose.dev.yml up
 
 This starts the API with hot reload at `http://localhost:8000`.
 
-> **Note on CGROUPS:** `docker-compose.dev.yml` sets `USE_CGROUPS=false`. Cgroups are a Linux kernel feature that `isolate` uses to enforce memory limits on sandboxed code, and they aren't available the same way on macOS (Docker Desktop runs containers inside a Linux VM, which doesn't expose cgroup control to the container like a native Linux host does). This project is developed on macOS, so cgroups are disabled by default locally. With `USE_CGROUPS=false`, memory limits aren't enforced and the `MLE` status will never be returned. In production, `USE_CGROUPS=true` so memory limits are enforced normally.
+> [!NOTE]  
+> `docker-compose.dev.yml` sets `USE_CGROUPS=false`. Cgroups are a Linux kernel feature that `isolate` uses to enforce memory limits on sandboxed code, and they aren't available the same way on macOS (Docker Desktop runs containers inside a Linux VM, which doesn't expose cgroup control to the container like a native Linux host does). This project is developed on macOS, so cgroups are disabled by default locally. With `USE_CGROUPS=false`, memory limits aren't enforced and the `MLE` status will never be returned. In production, `USE_CGROUPS=true` so memory limits are enforced normally.
 
 ## Configuration
 
@@ -168,8 +174,8 @@ uv run poe test_memory_limit       # run memory limit tests against the local AP
 uv run poe test_prod_memory_limit  # run memory limit tests against the production API
 ```
 
-The language tests hit a running instance of the API over HTTP. They use the `API_URL` environment variable, defaulting to `http://localhost:8000` if it isn't set, so start the API locally first (see "Running locally" above) before running them.
+The tests hit a running instance of the API over HTTP. They use the `API_URL` environment variable, defaulting to `http://localhost:8000` if it isn't set, so start the API locally first (see "Local Development" above) before running them.
 
 ## License
 
-This project is licensed under the MIT License. Open to contributions!
+This project is licensed under the MIT License. 
