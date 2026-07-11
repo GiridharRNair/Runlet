@@ -2,7 +2,7 @@
   <img src="assets/readme_header.png" alt="Runlet" width="640">
 </p>
 
-Lightweight REST API for executing single-file code in a sandboxed environment. Supports Python, JavaScript (Node.js), C++, and Java.
+Minimal REST API for executing single-file code in a sandboxed environment. Supports Python, JavaScript (Node.js), C++, and Java.
 
 Built to support [CodeAlong](https://github.com/GiridharRNair/CodeAlong). A platform for single file real-time collaborative code editing and execution.
 
@@ -14,7 +14,9 @@ Built to support [CodeAlong](https://github.com/GiridharRNair/CodeAlong). A plat
 
 The service is hosted on a Digital Ocean Droplet, where code changes are deployed through CI/CD pipelines managed by GitHub Actions. On the Droplet, Caddy sits in front of the app as a reverse proxy and handles HTTPS automatically, so the app itself only has to speak plain HTTP internally.
 
-The Docker image deployed on the Droplet bakes in the runtimes for every supported language (Python, Node.js, g++, and the JDK), so no language installation happens at request time. Inside the app container, code isn't run directly on the host or in a per-request Docker container, it runs inside three isolated sandboxes built around [isolate](https://github.com/ioi/isolate), the sandbox built for the IOI programming contest.
+The Docker image deployed on the Droplet bakes in the runtimes for every supported language (Python, Node.js, g++, and the JDK), so no language installation happens at request time. 
+
+Inside the app container, code isn't run directly on the host or in a per-request Docker container; it runs inside one of the three isolated sandboxes built around [isolate](https://github.com/ioi/isolate), a sandbox originally built for the IOI programming contest.
 
 ## API Reference
 
