@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/Runlet.png" alt="Runlet" width="640">
+  <img src="assets/readme_header.png" alt="Runlet" width="640">
 </p>
 
 Lightweight REST API for executing single-file code in a sandboxed environment. Supports Python, JavaScript (Node.js), C++, and Java.
@@ -12,9 +12,9 @@ Built to support [CodeAlong](https://github.com/GiridharRNair/CodeAlong). A plat
   <img src="assets/architecture.png" alt="Architecture" width="800">
 </p>
 
-The service is hosted on a Digital Ocean droplet, where code changes are deployed through CI/CD pipelines managed by GitHub Actions. On the droplet, Caddy sits in front of the app as a reverse proxy and handles HTTPS automatically, so the app itself only has to speak plain HTTP internally.
+The service is hosted on a Digital Ocean Droplet, where code changes are deployed through CI/CD pipelines managed by GitHub Actions. On the Droplet, Caddy sits in front of the app as a reverse proxy and handles HTTPS automatically, so the app itself only has to speak plain HTTP internally.
 
-The Docker image deployed on the droplet bakes in the runtimes for every supported language (Python, Node.js, g++, and the JDK), so no language installation happens at request time. Inside the app container, code isn't run directly on the host or in a per-request Docker container, it runs inside three isolated sandboxes built around [isolate](https://github.com/ioi/isolate), the sandbox built for the IOI programming contest.
+The Docker image deployed on the Droplet bakes in the runtimes for every supported language (Python, Node.js, g++, and the JDK), so no language installation happens at request time. Inside the app container, code isn't run directly on the host or in a per-request Docker container, it runs inside three isolated sandboxes built around [isolate](https://github.com/ioi/isolate), the sandbox built for the IOI programming contest.
 
 ## API Reference
 
@@ -147,7 +147,11 @@ docker compose -f docker-compose.dev.yml up
 The API with hot reload will be available at `http://localhost:8000`.
 
 > [!NOTE]  
-> The Docker compose in development sets the environment variable `USE_CGROUPS` to false. [Isolate](https://github.com/ioi/isolate) uses cgroups, a Linux kernel feature, to enforce memory limits, but Docker Desktop on macOS (used for local development) doesn't expose cgroup control the way a native Linux host does. With cgroups disabled, memory limits aren't enforced and `MLE` is never returned locally. In production, `USE_CGROUPS` is set to true and enforces memory limits normally.
+> The Docker compose in development sets the environment variable `USE_CGROUPS` to false. 
+>
+> [Isolate](https://github.com/ioi/isolate) uses cgroups, a Linux kernel feature, to enforce memory limits, but Docker Desktop on macOS (used for local development) doesn't expose cgroup control the way a native Linux host does. 
+>
+> With cgroups disabled, memory limits aren't enforced and `MLE` is never returned locally. In production, `USE_CGROUPS` is set to true and enforces memory limits normally.
 
 ## Configuration
 
@@ -183,4 +187,4 @@ The tests hit a running instance of the API over HTTP. They use the `API_URL` en
 
 ## License
 
-This project is licensed under the MIT License. 
+This project is licensed under the [MIT](LICENSE) License. 
