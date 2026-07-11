@@ -59,8 +59,8 @@ jobs:
             # Recreate only the containers whose image/config changed
             docker compose -f docker-compose.yml up -d --remove-orphans
 
-            # Restart Caddy to pick up any changes in the Caddyfile
-            docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
+            # Recreate the Caddy container to pick up any changes in the Caddyfile
+            docker compose -f docker-compose.yml up -d --force-recreate caddy
 
             # Clean up old, unused images to save disk space
             docker image prune -f
