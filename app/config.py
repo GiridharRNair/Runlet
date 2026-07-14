@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     MEMORY_LIMIT: int = 256
     COMPILE_TIME_LIMIT: float = 30.0
     COMPILE_MEMORY_LIMIT: int = 512
+    OUTPUT_LIMIT: int = 1
     MAX_BOXES: int = 3
     USE_CGROUPS: bool = True
     CODE_EXECUTION_RATE_LIMIT: str = "10"
