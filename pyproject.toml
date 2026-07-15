@@ -30,6 +30,7 @@ test_python = "pytest tests/test_python.py"
 test_js = "pytest tests/test_js.py"
 test_all_langs = "pytest tests/test_cpp.py tests/test_java.py tests/test_python.py tests/test_js.py"
 test_memory_limit = "pytest tests/test_memory_limit.py"
+test_input_limit = "pytest tests/test_input_limit.py"
 
 [tool.poe.tasks.test_prod_memory_limit]
 cmd = "pytest tests/test_memory_limit.py"
