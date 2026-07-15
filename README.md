@@ -2,9 +2,9 @@
   <img src="assets/readme_header.png" alt="Runlet" width="640">
 </p>
 
-Minimal REST API for executing single-file code in a sandboxed environment. Supports Python, JavaScript (Node.js), C++, and Java.
+Minimal REST API for executing single-file code in a sandboxed environment. Supports Python, JavaScript (Node.js), C++, and Java. Built to support [CodeAlong](https://github.com/GiridharRNair/CodeAlong). A platform for single file real-time collaborative code editing and execution. 
 
-Built to support [CodeAlong](https://github.com/GiridharRNair/CodeAlong). A platform for single file real-time collaborative code editing and execution.
+This project was originally inspired by EngineerMan's [Piston API](https://github.com/engineer-man/piston). Check out his [video](https://www.youtube.com/watch?v=SD4KgwdjmdI) breakdown!
 
 ## Architecture
 
@@ -47,7 +47,7 @@ Response schema:
 
 ```json
 {
-  "status": "OK | TLE | MLE | RE | CE",
+  "status": "OK | TLE | MLE | RE | OLE | CE",
   "stdout": "string",
   "stderr": "string",
   "time": "float | null, seconds",
@@ -87,11 +87,27 @@ Example response:
 | `TLE`  | Time limit exceeded                                             |
 | `MLE`  | Memory limit exceeded (only enforced when `USE_CGROUPS=true`)  |
 | `RE`   | Runtime error (non-zero exit, signal, etc.)                     |
+| `OLE`  | Output limit exceeded (stdout/stderr exceeded `OUTPUT_LIMIT`)   |
 | `CE`   | Compile error (C++ and Java only)                               |
 
 Other responses:
 
-- `422` — body failed validation (e.g. `language` isn't one of the four supported values)
+- `422` — body failed validation (e.g. `language` isn't one of the four supported values, or `code`/`stdin` exceed `CODE_LIMIT`/`STDIN_LIMIT`):
+
+  ```json
+  {
+    "detail": [
+      {
+        "type": "string_too_long",
+        "loc": ["body", "code"],
+        "msg": "String should have at most 1024 characters",
+        "input": "...",
+        "ctx": { "max_length": 1024 }
+      }
+    ]
+  }
+  ```
+
 - `500` — the sandbox itself failed to run the submission, `{"detail": "<error>"}`
 
 ### `GET /runtimes`
@@ -165,6 +181,9 @@ Set via environment variables — see [`app/config.py`](app/config.py):
 | `MEMORY_LIMIT`                | `256`   | Execution memory limit (MB)                                           |
 | `COMPILE_TIME_LIMIT`          | `30.0`  | Compile step time limit (seconds), C++/Java                           |
 | `COMPILE_MEMORY_LIMIT`        | `512`   | Compile step memory limit (MB), C++/Java                              |
+| `OUTPUT_LIMIT`                | `1`     | Max stdout/stderr a submission may write (KB), enforced via isolate's `--fsize` |
+| `CODE_LIMIT`                  | `1`     | Max size of the `code` field accepted by `/execute` (KB)               |
+| `STDIN_LIMIT`                 | `1`     | Max size of the `stdin` field accepted by `/execute` (KB)              |
 | `MAX_BOXES`                   | `3`     | Number of concurrent isolate sandboxes                                |
 | `USE_CGROUPS`                 | `true`  | Enforce memory limits via cgroups (disabled in `docker-compose.dev.yml`) |
 | `CODE_EXECUTION_RATE_LIMIT`   | `10`    | Requests per minute allowed to `/execute` per IP                      |
