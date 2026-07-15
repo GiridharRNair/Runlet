@@ -27,18 +27,18 @@ def get_memory_used(meta: dict[str, str]) -> int | None:
     return int(meta[key]) if key in meta else None
 
 
-async def run(*args: str, stdin_data: str = "") -> tuple[int | None, str, str]:
+async def run(*args: str) -> tuple[int | None, str, str]:
     try:
         proc = await asyncio.create_subprocess_exec(
             *args,
-            stdin=asyncio.subprocess.PIPE,
+            stdin=asyncio.subprocess.DEVNULL,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
     except OSError as e:
         raise OSError(f"Failed to spawn '{args[0]}': {e}") from e
     try:
-        stdout, stderr = await proc.communicate(input=stdin_data.encode())
+        stdout, stderr = await proc.communicate()
     except asyncio.CancelledError:
         proc.kill()
         await proc.wait()

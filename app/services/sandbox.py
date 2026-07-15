@@ -1,7 +1,10 @@
 import asyncio
+import logging
 from pathlib import Path
 from config import settings
 from services.execute_utils import run, SandboxInternalError
+
+logger = logging.getLogger(__name__)
 
 
 _pool: asyncio.Queue[int] = asyncio.Queue()
@@ -32,5 +35,9 @@ class sandbox:
                 raise SandboxInternalError(
                     f"Failed to reset sandbox {self._box_id}: {stderr}"
                 )
-        finally:
             _pool.put_nowait(self._box_id)
+        except Exception:
+            logger.warning(
+                "Box %s failed to reset and will not be reused", self._box_id
+            )
+            raise
