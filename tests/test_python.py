@@ -27,6 +27,14 @@ def test_tle(client):
     assert result["status"] == "TLE"
 
 
+def test_ole(client):
+    code = "print('A' * 1024)"
+    result = execute(client, "python", code)
+    assert result["status"] == "OLE"
+    assert result["stdout"] == ""
+    assert result["stderr"] == ""
+
+
 def test_runtime_error(client):
     result = execute(client, "python", "print(1 / 0)")
     assert result["status"] == "RE"

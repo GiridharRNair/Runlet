@@ -31,6 +31,14 @@ def test_tle(client):
     assert result["status"] == "TLE"
 
 
+def test_ole(client):
+    code = "console.log('A'.repeat(1024));"
+    result = execute(client, "javascript", code)
+    assert result["status"] == "OLE"
+    assert result["stdout"] == ""
+    assert result["stderr"] == ""
+
+
 def test_runtime_error(client):
     result = execute(client, "javascript", "throw new Error('boom');")
     assert result["status"] == "RE"

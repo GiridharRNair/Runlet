@@ -30,6 +30,14 @@ int main() {
     return 0;
 }"""
 
+OLE = """\
+#include <iostream>
+#include <string>
+int main() {
+    std::cout << std::string(1024, 'A');
+    return 0;
+}"""
+
 SEGFAULT = """\
 int main() {
     int* p = nullptr;
@@ -65,6 +73,13 @@ def test_multiline_output(client):
 def test_tle(client):
     result = execute(client, "cpp", TLE)
     assert result["status"] == "TLE"
+
+
+def test_ole(client):
+    result = execute(client, "cpp", OLE)
+    assert result["status"] == "OLE"
+    assert result["stdout"] == ""
+    assert result["stderr"] == ""
 
 
 def test_runtime_error(client):

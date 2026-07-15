@@ -33,6 +33,13 @@ public class Main {
     }
 }"""
 
+OLE = """\
+public class Main {
+    public static void main(String[] args) {
+        System.out.print("A".repeat(1024));
+    }
+}"""
+
 RUNTIME_ERROR = """\
 public class Main {
     public static void main(String[] args) {
@@ -71,6 +78,13 @@ def test_multiline_output(client):
 def test_tle(client):
     result = execute(client, "java", TLE)
     assert result["status"] == "TLE"
+
+
+def test_ole(client):
+    result = execute(client, "java", OLE)
+    assert result["status"] == "OLE"
+    assert result["stdout"] == ""
+    assert result["stderr"] == ""
 
 
 def test_runtime_error(client):
