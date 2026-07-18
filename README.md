@@ -28,6 +28,7 @@ You can also access the OpenAPI spec at `https://runlet.codealong.live/openapi.j
 | ------ | ----------- | --------------------------------------- | ---------- |
 | POST   | `/execute`  | Run a single file of code               | 10/minute  |
 | GET    | `/runtimes` | List supported languages and versions   | 10/minute  |
+| GET    | `/health`   | Health check                            | 10/minute  |
 
 ### `POST /execute`
 
@@ -142,6 +143,22 @@ Example response:
 ]
 ```
 
+### `GET /health`
+
+Health check. No request body.
+
+Example request:
+
+```bash
+curl https://runlet.codealong.live/health
+```
+
+Example response:
+
+```json
+{ "status": "healthy" }
+```
+
 ## Local Development
 
 Make sure you have the following installed:
@@ -150,9 +167,11 @@ Make sure you have the following installed:
 - [Python 3.13+](https://www.python.org/downloads/)
 - [uv](https://docs.astral.sh/uv/) 
 
-1. Install dependencies
+1. Clone the repo and install dependencies (needed for running tests and lint/format locally; the API itself runs inside Docker)
 
 ```bash
+git clone https://github.com/GiridharRNair/Runlet.git
+cd Runlet
 uv sync
 ```
 
@@ -162,14 +181,27 @@ uv sync
 docker compose -f docker-compose.dev.yml up
 ```
 
-The API with hot reload will be available at `http://localhost:8000`.
+The container mounts the repo into `/app` and runs `fastapi dev`, so the API hot-reloads on code changes. It'll be available at `http://localhost:8000`.
+
+3. Verify it's up
+
+```bash
+curl http://localhost:8000/health
+```
+
+4. Stop the API
+
+```bash
+docker compose -f docker-compose.dev.yml down
+```
 
 > [!NOTE]  
-> The Docker compose in development sets the environment variable `USE_CGROUPS` to false. 
+> `docker-compose.dev.yml` overrides two environment variables from their production defaults:
 >
-> [Isolate](https://github.com/ioi/isolate) uses cgroups, a Linux kernel feature, to enforce memory limits, but Docker Desktop on macOS (used for local development) doesn't expose cgroup control the way a native Linux host does. 
+> - `USE_CGROUPS=false` — [Isolate](https://github.com/ioi/isolate) uses cgroups, a Linux kernel feature, to enforce memory limits, but Docker Desktop on macOS (used for local development) doesn't expose cgroup control the way a native Linux host does. With cgroups disabled, memory limits aren't enforced and `MLE` is never returned locally. In production, `USE_CGROUPS` is set to true and enforces memory limits normally.
+> - `CODE_EXECUTION_RATE_LIMIT=100` — a looser rate limit than production's `10`/minute, so manual testing and the test suite don't get throttled.
 >
-> With cgroups disabled, memory limits aren't enforced and `MLE` is never returned locally. In production, `USE_CGROUPS` is set to true and enforces memory limits normally.
+> The container also runs with `privileged: true`, which isolate needs to set up its sandboxes. Docker Desktop allows this by default.
 
 ## Configuration
 
@@ -202,6 +234,7 @@ uv run poe test_java               # run Java language tests
 uv run poe test_all_langs          # run all language tests
 uv run poe test_memory_limit       # run memory limit tests against the local API
 uv run poe test_prod_memory_limit  # run memory limit tests against the production API
+uv run poe test_input_limit        # run code/stdin size limit tests
 ```
 
 The tests hit a running instance of the API over HTTP. They use the `API_URL` environment variable, defaulting to `http://localhost:8000` if it isn't set, so start the API locally first (see "Local Development" above) before running them.
