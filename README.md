@@ -199,6 +199,7 @@ docker compose -f docker-compose.dev.yml down
 > `docker-compose.dev.yml` overrides two environment variables from their production defaults:
 >
 > - `USE_CGROUPS=false` — [Isolate](https://github.com/ioi/isolate) uses cgroups, a Linux kernel feature, to enforce memory limits, but Docker Desktop on macOS (used for local development) doesn't expose cgroup control the way a native Linux host does. With cgroups disabled, memory limits aren't enforced and `MLE` is never returned locally. In production, `USE_CGROUPS` is set to true and enforces memory limits normally.
+>
 > - `CODE_EXECUTION_RATE_LIMIT=100` — a looser rate limit than production's `10`/minute, so manual testing and the test suite don't get throttled.
 >
 > The container also runs with `privileged: true`, which isolate needs to set up its sandboxes. Docker Desktop allows this by default.
