@@ -6,6 +6,8 @@ Minimal REST API for executing single-file code in a sandboxed environment. Supp
 
 This project was originally inspired by EngineerMan's [Piston API](https://github.com/engineer-man/piston). Check out his [video](https://www.youtube.com/watch?v=SD4KgwdjmdI) breakdown!
 
+This API is free for public use and does not require any authentication, but please be mindful of the rate limits and resource constraints. If you need higher limits or more features, consider hosting your own instance.
+
 ## Architecture
 
 <p align="center">
